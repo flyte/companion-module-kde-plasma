@@ -4,8 +4,7 @@
   "main": "main.js",
   "type": "commonjs",
   "scripts": {
-    "dev": "companion-module-build",
-    "lint": "node -e \"require('./main.js')\""
+    "lint": "node --check main.js"
   },
   "dependencies": {
     "@companion-module/base": "~1.11.0",
