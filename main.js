@@ -9,30 +9,39 @@ class KWinDesktopInstance extends InstanceBase {
     this.config = config
     this.updateStatus(InstanceStatus.Connecting)
     this.dbus = new KWinDbus((lvl, msg) => this.log(lvl, msg))
+    defineVariables(this)
+    defineActions(this)
+    defineFeedbacks(this)
+    await this.connectWithRetry()
+  }
+
+  async connectWithRetry() {
     try {
       await this.dbus.connect()
       const current = await this.dbus.getCurrentDesktop()
       const count = await this.dbus.getDesktopCount()
       this.currentDesktop = current
-      this.log('info', `KWin connected: desktop ${current}/${count}`)
-      defineVariables(this)
       setDesktopValues(this, current, count)
-      defineActions(this)
-      defineFeedbacks(this)
       this.dbus.onDesktopChanged = (n) => {
         this.currentDesktop = n
         this.log('debug', `currentDesktopChanged → ${n}`)
         setDesktopValues(this, n)
         this.checkFeedbacks('on_desktop')
       }
+      this.log('info', `KWin connected: desktop ${current}/${count}`)
       this.updateStatus(InstanceStatus.Ok)
     } catch (err) {
       this.log('error', `KWin DBus connect failed: ${err.message}`)
       this.updateStatus(InstanceStatus.ConnectionFailure, err.message)
+      this.reconnectTimer = setTimeout(() => this.connectWithRetry(), 5000)
     }
   }
 
   async destroy() {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = null
+    }
     if (this.dbus) this.dbus.disconnect()
     this.log('info', 'KWin desktop module destroyed')
   }
