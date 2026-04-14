@@ -1,6 +1,7 @@
 const { InstanceBase, runEntrypoint, InstanceStatus } = require('@companion-module/base')
 const { KWinDbus } = require('./lib/dbus')
 const { defineVariables, setDesktopValues } = require('./lib/variables')
+const { defineActions } = require('./lib/actions')
 
 class KWinDesktopInstance extends InstanceBase {
   async init(config) {
@@ -14,6 +15,7 @@ class KWinDesktopInstance extends InstanceBase {
       this.log('info', `KWin connected: desktop ${current}/${count}`)
       defineVariables(this)
       setDesktopValues(this, current, count)
+      defineActions(this)
       this.dbus.onDesktopChanged = (n) => {
         this.log('debug', `currentDesktopChanged → ${n}`)
         setDesktopValues(this, n)
