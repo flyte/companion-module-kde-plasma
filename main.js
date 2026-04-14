@@ -14,6 +14,11 @@ class KWinDesktopInstance extends InstanceBase {
       this.log('info', `KWin connected: desktop ${current}/${count}`)
       defineVariables(this)
       setDesktopValues(this, current, count)
+      this.dbus.onDesktopChanged = (n) => {
+        this.log('debug', `currentDesktopChanged → ${n}`)
+        setDesktopValues(this, n)
+        this.checkFeedbacks('on_desktop')
+      }
       this.updateStatus(InstanceStatus.Ok)
     } catch (err) {
       this.log('error', `KWin DBus connect failed: ${err.message}`)
