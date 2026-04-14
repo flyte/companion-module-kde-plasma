@@ -1,5 +1,6 @@
 const { InstanceBase, runEntrypoint, InstanceStatus } = require('@companion-module/base')
 const { KWinDbus } = require('./lib/dbus')
+const { defineVariables, setDesktopValues } = require('./lib/variables')
 
 class KWinDesktopInstance extends InstanceBase {
   async init(config) {
@@ -11,6 +12,8 @@ class KWinDesktopInstance extends InstanceBase {
       const current = await this.dbus.getCurrentDesktop()
       const count = await this.dbus.getDesktopCount()
       this.log('info', `KWin connected: desktop ${current}/${count}`)
+      defineVariables(this)
+      setDesktopValues(this, current, count)
       this.updateStatus(InstanceStatus.Ok)
     } catch (err) {
       this.log('error', `KWin DBus connect failed: ${err.message}`)
