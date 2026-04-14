@@ -1,0 +1,23 @@
+{
+  "id": "kwin-desktop",
+  "name": "kwin-desktop",
+  "shortname": "KWin Desktop",
+  "description": "Exposes KWin current virtual desktop via DBus",
+  "version": "0.1.0",
+  "license": "MIT",
+  "repository": "",
+  "bugs": "",
+  "maintainers": [
+    { "name": "flyte", "email": "" }
+  ],
+  "legacyIds": [],
+  "runtime": {
+    "type": "node18",
+    "api": "nodejs-ipc",
+    "apiVersion": "1.11.0",
+    "entrypoint": "main.js"
+  },
+  "manufacturer": "KDE",
+  "products": ["KWin"],
+  "keywords": ["kwin", "kde", "desktop", "dbus", "linux"]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "companion-module-kwin-desktop",
+  "version": "0.1.0",
+  "main": "main.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "companion-module-build",
+    "lint": "node -e \"require('./main.js')\""
+  },
+  "dependencies": {
+    "@companion-module/base": "~1.11.0",
+    "dbus-next": "^0.10.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
