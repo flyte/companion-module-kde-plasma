@@ -1,15 +1,15 @@
 const { InstanceBase, runEntrypoint, InstanceStatus } = require('@companion-module/base')
 const { KWinDbus } = require('./lib/dbus')
-const { defineVariables, setDesktopValues } = require('./lib/variables')
+const { defineVariables, setDesktopValues, setDesktopNameValues } = require('./lib/variables')
 const { defineActions } = require('./lib/actions')
 const { defineFeedbacks } = require('./lib/feedbacks')
+const { definePresets } = require('./lib/presets')
 
 class KWinDesktopInstance extends InstanceBase {
   async init(config) {
     this.config = config
     this.updateStatus(InstanceStatus.Connecting)
     this.dbus = new KWinDbus((lvl, msg) => this.log(lvl, msg))
-    defineVariables(this)
     defineActions(this)
     defineFeedbacks(this)
     await this.connectWithRetry()
@@ -20,8 +20,21 @@ class KWinDesktopInstance extends InstanceBase {
       await this.dbus.connect()
       const current = await this.dbus.getCurrentDesktop()
       const count = await this.dbus.getDesktopCount()
+      const ids = await this.dbus.getDesktopIds()
       this.currentDesktop = current
+      defineVariables(this, ids)
       setDesktopValues(this, current, count)
+      setDesktopNameValues(this, ids)
+      definePresets(this, ids)
+      this.dbus.onDesktopsChanged = async () => {
+        const freshIds = await this.dbus.getDesktopIds()
+        const freshCount = await this.dbus.getDesktopCount()
+        defineVariables(this, freshIds)
+        setDesktopValues(this, this.currentDesktop, freshCount)
+        setDesktopNameValues(this, freshIds)
+        definePresets(this, freshIds)
+        this.log('debug', `desktops changed → ${freshIds.length} desktops`)
+      }
       this.dbus.onDesktopChanged = (n) => {
         this.currentDesktop = n
         this.log('debug', `currentDesktopChanged → ${n}`)
