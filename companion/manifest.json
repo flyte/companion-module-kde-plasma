@@ -3,7 +3,7 @@
   "name": "kde-plasma",
   "shortname": "KDE Plasma",
   "description": "KDE Plasma integration: virtual desktops, screen lock, global shortcuts, microphone mute",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "MIT",
   "maintainers": [
     { "name": "flyte" }

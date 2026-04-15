@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.0] - 2026-04-15
 
 ### Changed
 
@@ -31,4 +31,5 @@ Initial public release. Module covers four KDE Plasma surfaces via a modular per
 - **Per-feature toggles** — each feature can be enabled/disabled independently via Companion's instance config. Disabled features contribute nothing; failed features (missing service, absent binary) are skipped individually and the module reports `UnknownWarning` naming which ones failed.
 - **Modular architecture** — `lib/core/` owns the shared bus and a scoped registry; each feature under `lib/features/` owns its proxies, signals, actions, feedbacks, variables, presets, and teardown end-to-end. Adding a feature is a drop-in-file plus a one-line index edit.
 
+[1.1.0]: https://github.com/flyte/companion-module-kde-plasma/releases/tag/v1.1.0
 [1.0.0]: https://github.com/flyte/companion-module-kde-plasma/releases/tag/v1.0.0
