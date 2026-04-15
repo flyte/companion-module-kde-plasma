@@ -6,6 +6,7 @@ const features = require('./lib/features')
 class KWinDesktopInstance extends InstanceBase {
   async init(config) {
     this.config = config || {}
+    this._destroyed = false
     this.registry = new Registry(this)
     this.busWrapper = new Bus((lvl, msg) => this.log(lvl, msg))
     this.activeFeatures = []
@@ -58,23 +59,34 @@ class KWinDesktopInstance extends InstanceBase {
   }
 
   updateLifecycleStatus() {
+    const anyEnabled = features.some((f) => this.featureEnabled(f))
+    if (!anyEnabled) {
+      this.updateStatus(InstanceStatus.BadConfig, 'no features enabled')
+      return
+    }
     if (this.failedFeatures.length > 0 && this.activeFeatures.length > 0) {
       const names = this.failedFeatures.map((f) => f.feature.id).join(', ')
       this.updateStatus(InstanceStatus.UnknownWarning, `features failed: ${names}`)
-    } else if (this.activeFeatures.length === 0) {
-      this.updateStatus(InstanceStatus.ConnectionFailure, 'no features initialized')
-    } else {
-      this.updateStatus(InstanceStatus.Ok)
+      return
     }
+    if (this.activeFeatures.length === 0) {
+      const names = this.failedFeatures.map((f) => f.feature.id).join(', ')
+      this.updateStatus(InstanceStatus.UnknownWarning, `all features failed: ${names}`)
+      return
+    }
+    this.updateStatus(InstanceStatus.Ok)
   }
 
   async connectWithRetry() {
     try {
       await this.busWrapper.connect()
+      if (this._destroyed) return
       await this.loadFeatures()
+      if (this._destroyed) return
       this.updateLifecycleStatus()
       this.log('info', `KWin module ready: ${this.activeFeatures.length} feature(s) active`)
     } catch (err) {
+      if (this._destroyed) return
       this.log('error', `KWin DBus connect failed: ${err.message}`)
       this.updateStatus(InstanceStatus.ConnectionFailure, err.message)
       this.reconnectTimer = setTimeout(() => this.connectWithRetry(), 5000)
@@ -82,6 +94,7 @@ class KWinDesktopInstance extends InstanceBase {
   }
 
   async destroy() {
+    this._destroyed = true
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer)
       this.reconnectTimer = null
@@ -94,6 +107,7 @@ class KWinDesktopInstance extends InstanceBase {
   async configUpdated(config) {
     const prev = this.config || {}
     this.config = config || {}
+    if (this._destroyed) return
     const toggleChanged = features.some(
       (f) => (prev[`feature_${f.id}`] !== false) !== (this.config[`feature_${f.id}`] !== false)
     )
