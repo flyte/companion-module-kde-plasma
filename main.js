@@ -35,6 +35,18 @@ class KWinDesktopInstance extends InstanceBase {
         definePresets(this, freshIds)
         this.log('debug', `desktops changed → ${freshIds.length} desktops`)
       }
+      try {
+        this.locked = await this.dbus.getLocked()
+      } catch (_) {
+        this.locked = false
+      }
+      this.setVariableValues({ locked: this.locked })
+      this.dbus.onLockChanged = (active) => {
+        this.locked = active
+        this.log('debug', `screen ${active ? 'locked' : 'unlocked'}`)
+        this.setVariableValues({ locked: active })
+        this.checkFeedbacks('is_locked')
+      }
       this.dbus.onDesktopChanged = (n) => {
         this.currentDesktop = n
         this.log('debug', `currentDesktopChanged → ${n}`)
