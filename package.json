@@ -1,5 +1,5 @@
 {
-  "name": "companion-module-kwin-desktop",
+  "name": "companion-module-kde-plasma",
   "version": "0.1.0",
   "main": "main.js",
   "type": "commonjs",
