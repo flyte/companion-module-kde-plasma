@@ -19,10 +19,22 @@ class KDEPlasmaInstance extends InstanceBase {
   backfillFeatureDefaults() {
     // Companion does not apply checkbox defaults to existing instance configs
     // when a new feature is added, so keys are simply missing. Fill them in
-    // and persist so the UI checkbox matches the runtime state.
+    // and persist so the UI checkbox matches the runtime state. Also migrate
+    // any legacy feature ids (feature.legacyIds) to the current key.
     let changed = false
     for (const feature of features) {
       const key = `feature_${feature.id}`
+      if (key in this.config) continue
+      const legacyIds = feature.legacyIds || []
+      for (const legacy of legacyIds) {
+        const legacyKey = `feature_${legacy}`
+        if (legacyKey in this.config) {
+          this.config[key] = this.config[legacyKey]
+          delete this.config[legacyKey]
+          changed = true
+          break
+        }
+      }
       if (!(key in this.config)) {
         this.config[key] = true
         changed = true
