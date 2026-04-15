@@ -1,60 +1,79 @@
 const { InstanceBase, runEntrypoint, InstanceStatus } = require('@companion-module/base')
-const { KWinDbus } = require('./lib/dbus')
-const { defineVariables, setDesktopValues, setDesktopNameValues } = require('./lib/variables')
-const { defineActions } = require('./lib/actions')
-const { defineFeedbacks } = require('./lib/feedbacks')
-const { definePresets } = require('./lib/presets')
+const { Bus } = require('./lib/core/bus')
+const { Registry } = require('./lib/core/registry')
+const features = require('./lib/features')
 
 class KWinDesktopInstance extends InstanceBase {
   async init(config) {
-    this.config = config
+    this.config = config || {}
+    this.registry = new Registry(this)
+    this.busWrapper = new Bus((lvl, msg) => this.log(lvl, msg))
+    this.activeFeatures = []
+    this.failedFeatures = []
     this.updateStatus(InstanceStatus.Connecting)
-    this.dbus = new KWinDbus((lvl, msg) => this.log(lvl, msg))
-    defineActions(this)
-    defineFeedbacks(this)
     await this.connectWithRetry()
+  }
+
+  featureEnabled(feature) {
+    const key = `feature_${feature.id}`
+    return this.config[key] !== false
+  }
+
+  async loadFeatures() {
+    this.activeFeatures = []
+    this.failedFeatures = []
+    for (const feature of features) {
+      if (!this.featureEnabled(feature)) continue
+      const ctx = {
+        bus: this.busWrapper.bus,
+        log: (lvl, msg) => this.log(lvl, `[${feature.id}] ${msg}`),
+        registry: this.registry.scopedFor(feature.id),
+        checkFeedbacks: (id) => this.checkFeedbacks(id),
+        setVariableValues: (values) => this.setVariableValues(values),
+        moduleLabel: this.label,
+      }
+      try {
+        await feature.init(ctx)
+        this.activeFeatures.push(feature)
+        this.log('info', `feature ${feature.id} initialized`)
+      } catch (err) {
+        this.log('error', `feature ${feature.id} init failed: ${err.message}`)
+        this.registry.remove(feature.id)
+        this.failedFeatures.push({ feature, error: err })
+      }
+    }
+    this.registry.flush()
+  }
+
+  async teardownFeatures() {
+    for (const feature of this.activeFeatures) {
+      try {
+        await feature.destroy()
+      } catch (err) {
+        this.log('error', `feature ${feature.id} destroy failed: ${err.message}`)
+      }
+    }
+    this.activeFeatures = []
+    this.registry.clear()
+  }
+
+  updateLifecycleStatus() {
+    if (this.failedFeatures.length > 0 && this.activeFeatures.length > 0) {
+      const names = this.failedFeatures.map((f) => f.feature.id).join(', ')
+      this.updateStatus(InstanceStatus.UnknownWarning, `features failed: ${names}`)
+    } else if (this.activeFeatures.length === 0) {
+      this.updateStatus(InstanceStatus.ConnectionFailure, 'no features initialized')
+    } else {
+      this.updateStatus(InstanceStatus.Ok)
+    }
   }
 
   async connectWithRetry() {
     try {
-      await this.dbus.connect()
-      const current = await this.dbus.getCurrentDesktop()
-      const count = await this.dbus.getDesktopCount()
-      const ids = await this.dbus.getDesktopIds()
-      this.currentDesktop = current
-      defineVariables(this, ids)
-      setDesktopValues(this, current, count)
-      setDesktopNameValues(this, ids)
-      definePresets(this, ids)
-      this.dbus.onDesktopsChanged = async () => {
-        const freshIds = await this.dbus.getDesktopIds()
-        const freshCount = await this.dbus.getDesktopCount()
-        defineVariables(this, freshIds)
-        setDesktopValues(this, this.currentDesktop, freshCount)
-        setDesktopNameValues(this, freshIds)
-        definePresets(this, freshIds)
-        this.log('debug', `desktops changed → ${freshIds.length} desktops`)
-      }
-      try {
-        this.locked = await this.dbus.getLocked()
-      } catch (_) {
-        this.locked = false
-      }
-      this.setVariableValues({ locked: this.locked })
-      this.dbus.onLockChanged = (active) => {
-        this.locked = active
-        this.log('debug', `screen ${active ? 'locked' : 'unlocked'}`)
-        this.setVariableValues({ locked: active })
-        this.checkFeedbacks('is_locked')
-      }
-      this.dbus.onDesktopChanged = (n) => {
-        this.currentDesktop = n
-        this.log('debug', `currentDesktopChanged → ${n}`)
-        setDesktopValues(this, n)
-        this.checkFeedbacks('on_desktop')
-      }
-      this.log('info', `KWin connected: desktop ${current}/${count}`)
-      this.updateStatus(InstanceStatus.Ok)
+      await this.busWrapper.connect()
+      await this.loadFeatures()
+      this.updateLifecycleStatus()
+      this.log('info', `KWin module ready: ${this.activeFeatures.length} feature(s) active`)
     } catch (err) {
       this.log('error', `KWin DBus connect failed: ${err.message}`)
       this.updateStatus(InstanceStatus.ConnectionFailure, err.message)
@@ -67,16 +86,33 @@ class KWinDesktopInstance extends InstanceBase {
       clearTimeout(this.reconnectTimer)
       this.reconnectTimer = null
     }
-    if (this.dbus) this.dbus.disconnect()
-    this.log('info', 'KWin desktop module destroyed')
+    await this.teardownFeatures()
+    if (this.busWrapper) this.busWrapper.disconnect()
+    this.log('info', 'KWin module destroyed')
   }
 
   async configUpdated(config) {
-    this.config = config
+    const prev = this.config || {}
+    this.config = config || {}
+    const toggleChanged = features.some(
+      (f) => (prev[`feature_${f.id}`] !== false) !== (this.config[`feature_${f.id}`] !== false)
+    )
+    if (!toggleChanged) return
+    if (!this.busWrapper.bus) return
+    this.log('info', 'feature toggles changed, reloading features')
+    await this.teardownFeatures()
+    await this.loadFeatures()
+    this.updateLifecycleStatus()
   }
 
   getConfigFields() {
-    return []
+    return features.map((f) => ({
+      type: 'checkbox',
+      id: `feature_${f.id}`,
+      label: f.label,
+      default: true,
+      width: 12,
+    }))
   }
 }
 
