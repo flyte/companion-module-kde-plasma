@@ -3,7 +3,7 @@ const { Bus } = require('./lib/core/bus')
 const { Registry } = require('./lib/core/registry')
 const features = require('./lib/features')
 
-class KWinDesktopInstance extends InstanceBase {
+class KDEPlasmaInstance extends InstanceBase {
   async init(config) {
     this.config = config || {}
     this._destroyed = false
@@ -148,4 +148,4 @@ class KWinDesktopInstance extends InstanceBase {
   }
 }
 
-runEntrypoint(KWinDesktopInstance, [])
+runEntrypoint(KDEPlasmaInstance, [])

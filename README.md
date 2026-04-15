@@ -1,4 +1,4 @@
-# companion-module-kwin-desktop
+# companion-module-kde-plasma
 
 Bitfocus Companion module for KDE Plasma, exposing virtual desktops, screen lock, global shortcuts, and microphone mute state over the session DBus (and `pactl` for audio).
 
@@ -19,11 +19,11 @@ Each feature can be toggled independently in the module config. A feature that f
 
 | Variable | Description |
 |---|---|
-| `$(kwin-desktop:current_desktop)` | Current virtual desktop number (1-based) |
-| `$(kwin-desktop:desktop_count)` | Total number of virtual desktops |
-| `$(kwin-desktop:desktop_N_name)` | Name of desktop N (one variable per desktop) |
-| `$(kwin-desktop:locked)` | Screen lock state (`true` / `false`) |
-| `$(kwin-desktop:mic_muted)` | Default audio source mute state (`true` / `false`) |
+| `$(kde-plasma:current_desktop)` | Current virtual desktop number (1-based) |
+| `$(kde-plasma:desktop_count)` | Total number of virtual desktops |
+| `$(kde-plasma:desktop_N_name)` | Name of desktop N (one variable per desktop) |
+| `$(kde-plasma:locked)` | Screen lock state (`true` / `false`) |
+| `$(kde-plasma:mic_muted)` | Default audio source mute state (`true` / `false`) |
 
 ## Actions
 

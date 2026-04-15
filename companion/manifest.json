@@ -1,23 +1,23 @@
 {
-  "id": "kwin-desktop",
-  "name": "kwin-desktop",
-  "shortname": "KWin Desktop",
-  "description": "Exposes KWin current virtual desktop via DBus",
-  "version": "0.1.0",
+  "id": "kde-plasma",
+  "name": "kde-plasma",
+  "shortname": "KDE Plasma",
+  "description": "KDE Plasma integration: virtual desktops, screen lock, global shortcuts, microphone mute",
+  "version": "1.0.0",
   "license": "MIT",
   "maintainers": [
     { "name": "flyte" }
   ],
-  "legacyIds": [],
+  "legacyIds": ["kwin-desktop"],
   "runtime": {
     "type": "node22",
     "api": "nodejs-ipc",
     "apiVersion": "1.11.0",
     "entrypoint": "../main.js"
   },
-  "repository": "https://github.com/flyte/bitfocus-dbus",
-  "bugs": "https://github.com/flyte/bitfocus-dbus/issues",
+  "repository": "https://github.com/flyte/companion-module-kde-plasma",
+  "bugs": "https://github.com/flyte/companion-module-kde-plasma/issues",
   "manufacturer": "KDE",
-  "products": ["KWin"],
-  "keywords": ["kwin", "kde", "desktop", "dbus", "linux"]
+  "products": ["Plasma", "KWin"],
+  "keywords": ["kde", "plasma", "kwin", "kglobalaccel", "dbus", "linux", "desktop"]
 }
