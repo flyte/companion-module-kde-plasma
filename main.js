@@ -7,12 +7,30 @@ class KWinDesktopInstance extends InstanceBase {
   async init(config) {
     this.config = config || {}
     this._destroyed = false
+    this.backfillFeatureDefaults()
     this.registry = new Registry(this)
     this.busWrapper = new Bus((lvl, msg) => this.log(lvl, msg))
     this.activeFeatures = []
     this.failedFeatures = []
     this.updateStatus(InstanceStatus.Connecting)
     await this.connectWithRetry()
+  }
+
+  backfillFeatureDefaults() {
+    // Companion does not apply checkbox defaults to existing instance configs
+    // when a new feature is added, so keys are simply missing. Fill them in
+    // and persist so the UI checkbox matches the runtime state.
+    let changed = false
+    for (const feature of features) {
+      const key = `feature_${feature.id}`
+      if (!(key in this.config)) {
+        this.config[key] = true
+        changed = true
+      }
+    }
+    if (changed && typeof this.saveConfig === 'function') {
+      this.saveConfig(this.config)
+    }
   }
 
   featureEnabled(feature) {
