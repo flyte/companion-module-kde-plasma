@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **`mic` feature renamed and generalised to `audio`.** Now covers both the default sink (speakers) and the default source (mic), exposing mute toggle + volume up/down actions for each, mute feedbacks for each, and volume / device-name variables alongside the existing `mic_muted` variable (preserved for backward compatibility). Presets no longer depend on KGlobalAccel shortcut bindings — mute buttons use direct `pactl set-*-mute ... toggle` actions. Existing `feature_mic` config keys migrate automatically via `feature.legacyIds`.
+- **shortcuts feature** drops its bundled `Audio` preset category; the audio feature's direct-action presets replace them.
+
+### Added
+
+- `pactl subscribe` child process is now supervised and auto-restarts on exit or error with exponential backoff (0.5s → 30s, resets on successful output).
+- Debounced refetch (100ms) so bursts of pactl events from held volume keys only trigger one query cycle.
+
 ## [1.0.0] - 2026-04-15
 
 Initial public release. Module covers four KDE Plasma surfaces via a modular per-feature architecture.
